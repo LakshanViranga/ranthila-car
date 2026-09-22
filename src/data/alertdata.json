@@ -1,0 +1,19 @@
+{
+  "error":{
+    "color":"red-darken-3",
+    "btncolor":"red-lighten-5"
+  },
+
+  "info":{
+    "color":"blue-darken-1",
+    "btncolor":"blue-lighten-5"
+  },
+  "warning":{
+    "color":"yellow-darken-1",
+    "btncolor":"grey-darken-4"
+  },
+  "success":{
+    "color":"green",
+    "btncolor":"green-lighten-5"
+  }
+}

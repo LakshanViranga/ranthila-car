@@ -1,0 +1,33 @@
+{
+  "productName": "Rent Car",
+  "version": "1.0.0",
+  "identifier": "com.future_craft.rent",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Rent Car POS",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi"],
+    "icon": [
+      "icon/icon.ico",
+      "icon/icon.png",
+      "icon/icon.icns"
+    ]
+  }
+}
