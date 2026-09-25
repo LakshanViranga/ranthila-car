@@ -1030,8 +1030,6 @@ const loadReservation = async () => {
 
     // Fetch all reservations and find the specific one
     const allReservations = await dbService.getAllOrders()
-    console.log(reservationId)
-    console.log(allReservations)
     const foundReservation = allReservations.find((item) => item.orderNumber === reservationId)
 
     if (!foundReservation) {

@@ -11,13 +11,20 @@
     <div class="vehicles-content">
       <div class="vehicles-container">
 
-        <!-- Page Header with Add Button -->
+        <!-- Page Header with Add Button and Reminders Button -->
         <div class="page-header">
           <h1>Manage Vehicles</h1>
-          <button class="btn-add-vehicle" @click="openAddModal">
-            <i class="fa fa-plus"></i>
-            <span>Add Vehicle</span>
-          </button>
+          <div class="header-actions">
+            <button class="btn-reminders" @click="openRemindersModal" v-if="upcomingExpirations.length > 0">
+              <i class="fa fa-bell"></i>
+              <span>Upcoming Expirations</span>
+              <span class="reminder-badge">{{ upcomingExpirations.length }}</span>
+            </button>
+            <button class="btn-add-vehicle" @click="openAddModal">
+              <i class="fa fa-plus"></i>
+              <span>Add Vehicle</span>
+            </button>
+          </div>
         </div>
 
         <!-- Vehicles Table -->
@@ -77,6 +84,7 @@
                     <i class="fa fa-edit"></i>
                   </button>
                   <button
+                      v-if="roleName === roleTypes.admin"
                       class="btn-action delete"
                       @click="deleteVehicle(vehicle.vehicleId)"
                       title="Delete"
@@ -197,6 +205,61 @@
             <button class="btn-secondary" @click="closeViewModal">Close</button>
             <button class="btn-primary" @click="openEditModal(selectedVehicle)">Edit Vehicle</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Reminders Modal -->
+    <div v-if="showRemindersModal" class="modal-overlay" @click="closeRemindersModal">
+      <div class="modal-content reminders-modal" @click.stop>
+        <div class="modal-header reminders-header">
+          <h2><i class="fa fa-bell"></i> Upcoming Expirations</h2>
+          <button class="btn-close" @click="closeRemindersModal">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body reminders-body">
+          <div class="reminders-content">
+            <div v-for="item in upcomingExpirations" :key="item.vehicle.id" class="reminder-card">
+              <div class="reminder-vehicle-info">
+                <div class="vehicle-name-section">
+                  <strong>{{ item.vehicle.manufacturer }} {{ item.vehicle.modelName }}</strong>
+                  <span class="reg-number">{{ item.vehicle.registerNumber }}</span>
+                </div>
+              </div>
+
+              <div class="reminder-items">
+                <!-- Revenue License Expiration -->
+                <div v-if="item.revenueLicenseExpiring" class="expiration-item revenue">
+                  <i class="fa fa-calendar"></i>
+                  <div class="expiration-details">
+                    <label>Revenue License Expiring</label>
+                    <p>{{ item.vehicle.revenueLicenseDate }}</p>
+                    <span class="days-left">{{ item.revenueLicenseDaysLeft }} days left</span>
+                  </div>
+                </div>
+
+                <!-- Insurance Expiration -->
+                <div v-if="item.insuranceExpiring" class="expiration-item insurance">
+                  <i class="fa fa-shield"></i>
+                  <div class="expiration-details">
+                    <label>Insurance Expiring</label>
+                    <p>{{ item.vehicle.insuranceDate }}</p>
+                    <span class="days-left">{{ item.insuranceDaysLeft }} days left</span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn-view-details" @click="selectVehicleAndCloseReminders(item.vehicle)">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reminders-footer">
+          <button class="btn-secondary" @click="closeRemindersModal">Close</button>
         </div>
       </div>
     </div>
@@ -424,7 +487,7 @@
 <script>
 import HeaderComponent from '../component/Header.vue';
 import { dbService } from '../services/db.ts';
-import { transmissionType } from '../utils/constants.ts'
+import {roleTypes, transmissionType} from '../utils/constants.ts'
 import { useAuthStore } from "../stores/auth.ts";
 import {useSnackbar} from "../composables/useSnackbar.js";
 import ConfirmationModal from "../component/ConfirmationModal.vue";
@@ -443,6 +506,7 @@ export default {
       roleName: null,
       showModal: false,
       showViewModal: false,
+      showRemindersModal: false,
       isEditMode: false,
       editingVehicleId: null,
       selectedVehicle: null,
@@ -463,6 +527,7 @@ export default {
       },
       vehicles: [],
       confirmDialog: ref(null),
+      expirationThresholdDays: 30, // Show reminders for expirations within 30 days
     };
   },
   created() {
@@ -471,6 +536,9 @@ export default {
     this.roleName = authStore.role
   },
   computed: {
+    roleTypes() {
+      return roleTypes
+    },
     transmissionType() {
       return transmissionType
     },
@@ -484,9 +552,54 @@ export default {
       if (this.vehicles.length === 0) return 0;
       const total = this.vehicles.reduce((sum, v) => sum + v.basePrice, 0);
       return total / this.vehicles.length;
+    },
+    upcomingExpirations() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thresholdDate = new Date(today);
+      thresholdDate.setDate(thresholdDate.getDate() + this.expirationThresholdDays);
+
+      const expiringVehicles = [];
+
+      this.vehicles.forEach(vehicle => {
+        const revenueLicenseDate = new Date(vehicle.revenueLicenseDate);
+        const insuranceDate = new Date(vehicle.insuranceDate);
+
+        revenueLicenseDate.setHours(0, 0, 0, 0);
+        insuranceDate.setHours(0, 0, 0, 0);
+
+        const revenueLicenseExpiring = revenueLicenseDate >= today && revenueLicenseDate <= thresholdDate;
+        const insuranceExpiring = insuranceDate >= today && insuranceDate <= thresholdDate;
+
+        if (revenueLicenseExpiring || insuranceExpiring) {
+          const revenueLicenseDaysLeft = this.calculateDaysLeft(revenueLicenseDate, today);
+          const insuranceDaysLeft = this.calculateDaysLeft(insuranceDate, today);
+
+          expiringVehicles.push({
+            vehicle,
+            revenueLicenseExpiring,
+            insuranceExpiring,
+            revenueLicenseDaysLeft,
+            insuranceDaysLeft,
+          });
+        }
+      });
+
+      // Sort by days left (earliest first)
+      return expiringVehicles.sort((a, b) => {
+        const aDaysLeft = a.revenueLicenseExpiring ? a.revenueLicenseDaysLeft : a.insuranceDaysLeft;
+        const bDaysLeft = b.revenueLicenseExpiring ? b.revenueLicenseDaysLeft : b.insuranceDaysLeft;
+        return aDaysLeft - bDaysLeft;
+      });
     }
   },
   methods: {
+    calculateDaysLeft(expirationDate, today) {
+      const timeDiff = expirationDate - today;
+      const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      return daysLeft;
+    },
+
     formatPrice(value) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -519,6 +632,20 @@ export default {
     closeViewModal() {
       this.showViewModal = false;
       this.selectedVehicle = null;
+    },
+
+    openRemindersModal() {
+      this.showRemindersModal = true;
+    },
+
+    closeRemindersModal() {
+      this.showRemindersModal = false;
+    },
+
+    selectVehicleAndCloseReminders(vehicle) {
+      this.selectedVehicle = vehicle;
+      this.showRemindersModal = false;
+      this.showViewModal = true;
     },
 
     closeModal() {
@@ -631,21 +758,21 @@ export default {
       })
     },
     async deleteVehicleConfirm(vehicleId) {
-          this.confirmDialog.open({
-            title: 'Delete Vehicle',
-            subtitle: 'This will be effect to other',
-            message: 'Are you sure you want to delete this vehicle?',
-            type: 'error',
-            confirmText: 'Delete',
-            onConfirm: async () => {
-              await dbService.deleteVehicle(vehicleId);
+      this.confirmDialog.open({
+        title: 'Delete Vehicle',
+        subtitle: 'This will be effect to other',
+        message: 'Are you sure you want to delete this vehicle?',
+        type: 'error',
+        confirmText: 'Delete',
+        onConfirm: async () => {
+          await dbService.deleteVehicle(vehicleId);
 
-              const index = this.vehicles.findIndex(v => v.vehicleId === vehicleId);
-              if (index > -1) {
-                this.vehicles.splice(index, 1);
-              }
-            },
-          })
+          const index = this.vehicles.findIndex(v => v.vehicleId === vehicleId);
+          if (index > -1) {
+            this.vehicles.splice(index, 1);
+          }
+        },
+      })
     },
 
     handleLogout() {
@@ -739,6 +866,51 @@ export default {
   font-size: 28px;
   font-weight: 500;
   color: var(--color-text-primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-reminders {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  position: relative;
+}
+
+.btn-reminders:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-reminders i {
+  font-size: 18px;
+}
+
+.reminder-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 0.5rem;
 }
 
 .btn-add-vehicle {
@@ -1007,6 +1179,10 @@ export default {
   max-width: 700px;
 }
 
+.modal-content.reminders-modal {
+  max-width: 650px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1018,10 +1194,21 @@ export default {
   border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
 }
 
+.modal-header.reminders-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
 .modal-header h2 {
   margin: 0;
   font-size: 20px;
   color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header h2 i {
+  font-size: 22px;
 }
 
 .btn-close {
@@ -1058,6 +1245,161 @@ export default {
 
 .view-body {
   padding: 0;
+}
+
+.reminders-body {
+  padding: 1.5rem;
+}
+
+.reminders-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reminder-card {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all var(--transition-normal);
+}
+
+.reminder-card:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+}
+
+.reminder-vehicle-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.vehicle-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vehicle-name-section strong {
+  font-size: 16px;
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.vehicle-name-section .reg-number {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.reminder-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.expiration-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  align-items: flex-start;
+}
+
+.expiration-item.revenue {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.expiration-item.insurance {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.expiration-item i {
+  font-size: 18px;
+  margin-top: 0.2rem;
+  color: var(--color-text-secondary);
+  min-width: 20px;
+}
+
+.expiration-item.revenue i {
+  color: #3b82f6;
+}
+
+.expiration-item.insurance i {
+  color: #ef4444;
+}
+
+.expiration-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.expiration-details label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.expiration-details p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-family: monospace;
+}
+
+.days-left {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.expiration-item.revenue .days-left {
+  color: #3b82f6;
+}
+
+.expiration-item.insurance .days-left {
+  color: #ef4444;
+}
+
+.btn-view-details {
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.btn-view-details:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.reminders-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  background: var(--color-background-secondary);
+  border-top: 1px solid var(--color-border-tertiary);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
 }
 
 /* === VIEW MODAL STYLES === */
@@ -1268,6 +1610,21 @@ select.input-field option:checked {
   .modal-body form {
     grid-template-columns: 1fr;
   }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .header-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1275,6 +1632,16 @@ select.input-field option:checked {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .header-actions button {
+    width: 100%;
   }
 
   .btn-add-vehicle {
@@ -1321,6 +1688,15 @@ select.input-field option:checked {
   select.input-field {
     padding-right: 2.5rem;
     background-position: right 0.75rem center;
+  }
+
+  .reminder-card {
+    padding: 1rem;
+  }
+
+  .btn-view-details {
+    width: 100%;
+    text-align: center;
   }
 }
 

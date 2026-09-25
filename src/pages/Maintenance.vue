@@ -1,4 +1,4 @@
-<template>
+<template xmlns="http://www.w3.org/1999/html">
   <div class="maintenance-page">
     <!-- Header Component -->
     <header-component
@@ -13,7 +13,7 @@
 
         <!-- Page Header with Upcoming Badge Button -->
         <div class="page-header">
-          <h1>Vehicle Maintenance</h1>
+          <h1>{{ t('maintenancePage.heading')}}</h1>
           <div class="header-actions">
             <button
                 v-if="upcomingMaintenance.length > 0"
@@ -22,12 +22,12 @@
                 :class="{ active: showUpcomingPanel }"
             >
               <i class="fa fa-bell"></i>
-              <span class="badge-text">Upcoming</span>
+              <span class="badge-text">{{ t('maintenancePage.label.upcoming')}}</span>
               <span class="badge-count">{{ upcomingMaintenance.length }}</span>
             </button>
             <button class="btn-add-record" @click="openAddModal">
               <i class="fa fa-plus"></i>
-              <span>Add Maintenance Record</span>
+              <span>{{ t('maintenancePage.button.add')}}</span>
             </button>
           </div>
         </div>
@@ -35,7 +35,7 @@
         <!-- Upcoming Events Sliding Panel -->
         <div v-if="showUpcomingPanel" class="upcoming-panel">
           <div class="panel-header">
-            <h2>📌 Upcoming Maintenance (Next 7 Days)</h2>
+            <h2>📌 {{ t('maintenancePage.label.upcomingMaintenance')}}</h2>
             <button class="btn-close-panel" @click="showUpcomingPanel = false">
               <i class="fa fa-times"></i>
             </button>
@@ -53,9 +53,9 @@
                   </span>
                 </div>
                 <div class="reminder-content">
-                  <p><strong>Service Type:</strong> {{ reminder.maintenanceRecord }}</p>
-                  <p><strong>Description:</strong> {{ reminder.description }}</p>
-                  <p><strong>Due Date:</strong> {{ formatDate(reminder.dueDate) }}</p>
+                  <p><strong>{{ t('maintenancePage.label.serviceType')}}:</strong> {{ reminder.maintenanceRecord }}</p>
+                  <p><strong>{{ t('maintenancePage.label.description')}}:</strong> {{ reminder.description }}</p>
+                  <p><strong>{{ t('maintenancePage.label.dueDate')}}:</strong> {{ formatDate(reminder.dueDate) }}</p>
                 </div>
                 <div class="reminder-actions">
                   <button class="btn-action view" @click="viewRecord(reminder)" title="View">
@@ -74,7 +74,7 @@
         <div class="main-content">
           <div class="table-section">
             <div class="table-header">
-              <h2 class="section-title">Maintenance History</h2>
+              <h2 class="section-title">{{ t('maintenancePage.label.maintenanceHistory')}}</h2>
               <div class="table-filters">
                 <input
                     v-model="searchQuery"
@@ -89,13 +89,13 @@
               <table class="maintenance-table">
                 <thead>
                 <tr>
-                  <th>Register Number</th>
-                  <th>Service Type</th>
-                  <th>Description</th>
-                  <th>Cost</th>
-                  <th>Created Date</th>
-                  <th>Payment Type</th>
-                  <th>Payment Status</th>
+                  <th>{{ t('maintenancePage.label.registerNumber')}}</th>
+                  <th>{{ t('maintenancePage.label.serviceType')}}</th>
+                  <th>{{ t('maintenancePage.label.description')}}</th>
+                  <th>{{ t('maintenancePage.label.cost')}}</th>
+                  <th>{{ t('maintenancePage.label.createdDate')}}</th>
+                  <th>{{ t('maintenancePage.label.paymentType')}}</th>
+                  <th>{{ t('maintenancePage.label.paymentStatus')}}</th>
                   <th>Actions</th>
                 </tr>
                 </thead>
@@ -105,7 +105,7 @@
                     {{ record.vehicleRegisterNumber }}
                   </td>
                   <td class="service-type">
-                    <span class="service-badge">{{ record.maintenanceRecord }}</span>
+                    <span class="service-badge">{{ getLabelValues(maintenanceTypeArray, record.maintenanceRecord) }}</span>
                   </td>
                   <td class="description">
                     {{ record.description }}
@@ -147,6 +147,7 @@
                       <i class="fa fa-check"></i>
                     </button>
                     <button
+                        v-if="roleName === roleTypes.admin"
                         class="btn-action delete"
                         @click="deleteRecord(record.id)"
                         title="Delete"
@@ -222,24 +223,18 @@
               <!-- Maintenance Record Type -->
               <div class="form-group">
                 <label for="maintenanceType">Service Type <span class="required">*</span></label>
-                <select
-                    id="maintenanceType"
+                <v-select
                     v-model="formData.maintenanceRecord"
+                    :items="maintenanceTypeArray"
+                    item-title="label"
+                    item-value="value"
                     class="input-field"
-                    required
-                >
-                  <option value="">Select service type</option>
-                  <option value="Oil Change">Oil Change</option>
-                  <option value="Filter Replacement">Filter Replacement</option>
-                  <option value="Tire Replacement">Tire Replacement</option>
-                  <option value="Brake Service">Brake Service</option>
-                  <option value="Engine Tune-up">Engine Tune-up</option>
-                  <option value="Battery Replacement">Battery Replacement</option>
-                  <option value="Transmission Service">Transmission Service</option>
-                  <option value="AC Service">AC Service</option>
-                  <option value="General Inspection">General Inspection</option>
-                  <option value="Other">Other</option>
-                </select>
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    placeholder="Select payment type"
+                    :disabled="isEditMode"
+                />
               </div>
             </div>
 
@@ -326,7 +321,7 @@
               </div>
 
               <!-- Due Date for Next Service (Show if: date or both) -->
-              <div v-if="formData.nextServiceType === 'date' || formData.nextServiceType === 'both'" class="form-group">
+              <div v-if="formData.nextServiceType === nextServiceTypeConst.fromDate || formData.nextServiceType === nextServiceTypeConst.fromBoth" class="form-group">
                 <label for="dueDate">Due Date for Next Service</label>
                 <input
                     id="dueDate"
@@ -337,16 +332,20 @@
               </div>
 
               <!-- Due Mileage for Next Service (Show if: mileage or both) -->
-              <div v-if="formData.nextServiceType === 'mileage' || formData.nextServiceType === 'both'" class="form-group">
+              <div v-if="formData.nextServiceType === nextServiceTypeConst.fromMileage || formData.nextServiceType === nextServiceTypeConst.fromBoth" class="form-group">
                 <label for="dueMileage">Due Mileage for Next Service (km)</label>
-                <input
-                    id="dueMileage"
-                    v-model.number="formData.dueMileage"
-                    type="number"
+                <v-select
+                    v-model="nextServiceMileageTerm"
+                    :items="nextServiceMileage"
+                    item-title="label"
+                    item-value="value"
                     class="input-field"
-                    placeholder="0"
-                    min="0"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    placeholder="Select payment type"
                 />
+                <label :for="`nextServiceMileageTerm`" class="form-label">Next service on {{calculateDueMileage}}</label>
               </div>
             </div>
 
@@ -418,7 +417,7 @@
               </div>
               <div class="detail-item">
                 <label>Service Type</label>
-                <p>{{ selectedRecord.maintenanceRecord }}</p>
+                <p>{{ getLabelValues(maintenanceTypeArray, selectedRecord.maintenanceRecord) }}</p>
               </div>
               <div class="detail-item">
                 <label>Cost</label>
@@ -483,12 +482,15 @@ import {
   paymentStatus,
   roleTypes,
   convertSnakeCase,
-  paymentTypes, paymentTypeArray
+  paymentTypes, paymentTypeArray, nextServiceType, nextServiceTypeConst, nextServiceMileage, maintenanceTypeArray,
+  getLabelValues
 } from '../utils/constants.ts'
 import {useRouter} from "vue-router";
 import ConfirmationModal from "../component/ConfirmationModal.vue";
+import {useI18n} from "vue-i18n";
 
 const emit = defineEmits(['logout'])
+const { t } = useI18n()
 
 const router = useRouter()
 const { showSuccess, showError } = useSnackbar()
@@ -508,12 +510,8 @@ const vehicles = ref( [])
 const maintenanceRecords = ref([])
 
 // Next Service Options - from constants (add this to your constants.ts)
-const nextServiceOptions = ref([
-  { value: 'none', label: 'None' },
-  { value: 'mileage', label: 'Mileage' },
-  { value: 'date', label: 'Date' },
-  { value: 'both', label: 'Both' }
-])
+const nextServiceOptions = ref(nextServiceType)
+const nextServiceMileageTerm = ref(0)
 
 let formData = ref({
   vehicleId: '',
@@ -534,7 +532,6 @@ const confirmDialog = ref(null)
 watch(
     () => formData.value.paymentType,
     (newValue) => {
-      console.log(newValue)
       if (newValue === paymentTypes.cashPayment|| newValue === paymentTypes.cardPayment || newValue === paymentTypes.bankTransfer ) {
         formData.value.paymentStatus = paymentStatus.completed
       } else if (newValue === paymentTypes.creditPayment) {
@@ -565,6 +562,12 @@ const upcomingMaintenance = computed(() => {
     return dueDate >= today && dueDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   })
       .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+})
+
+const calculateDueMileage = computed(() => {
+  const dueMileage = formData.value.serviceMileage + nextServiceMileageTerm.value
+  formData.value.dueMileage = dueMileage
+  return dueMileage
 })
 
 const formatPrice = (price) => {
@@ -830,9 +833,9 @@ const getMaintenanceRecords = async () => {
   }
 }
 
-const getVehicleName = async (vehicleId) => {
+const getVehicleName =  (vehicleId) => {
   const vehicle = vehicles.value.find(v => v.vehicle_id === vehicleId);
-  return vehicle ? vehicle.manufacturer + vehicle.modelName : "Unknown";
+  return vehicle != null ? vehicle.manufacturer+ ' ' + vehicle.modelName : "Unknown";
 }
 
 // Lifecycle

@@ -35,6 +35,10 @@ export const dbService = {
         return invoke<Order[]>('get_orders_by_date', { date });
     },
 
+    async getOrdersCountByCustomerId(id: string) {
+        return invoke<any>('get_order_count_by_customer_id', { customerId: id });
+    },
+
     // Vehicle
     async createVehicle(request: any) {
         return invoke('create_vehicle', { request });
@@ -59,6 +63,9 @@ export const dbService = {
     },
     async getCustomerByIdentity(customerId: string) {
         return invoke<any>('get_customer_by_identity_number', { nationalId: customerId });
+    },
+    async updateCustomer(request: any) {
+        return invoke('update_customer', { request });
     },
 
     // Maintenance
@@ -152,8 +159,8 @@ export const dbService = {
     },
 
     //Filter orders
-    async filterOrder(params: string){
-        return invoke('filter_order', { request: params });
+    async filterOrder(request: any){
+        return invoke('filter_order', { request});
     },
 
     // Bank records

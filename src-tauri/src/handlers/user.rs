@@ -59,7 +59,7 @@ pub fn login(state: tauri::State<AppState> ,request: LoginRequest) -> Result<Log
     }
 
     let db = state.db.lock().unwrap();
-    let result: Result<UserDb, _> = db.query_row("SELECT id, username, password, role, status, created_at FROM users WHERE username = ?1",
+    let result: Result<UserDb, _> = db.query_row("SELECT id, username, password, role, status, created_at FROM users WHERE LOWER(username) = ?1",
         params![request.username],
         |row| {
             Ok(UserDb {

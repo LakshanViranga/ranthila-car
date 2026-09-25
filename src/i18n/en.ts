@@ -44,7 +44,7 @@ export default {
             nationalId: 'Enter customer National Identity Card Number',
         },
         button:{
-            view: 'View',
+            customerView: 'Customer View',
         },
     },
     accountPage: {
@@ -68,5 +68,25 @@ export default {
         bankExpense: 'Bank Transfer/Card Expenses',
         bankedAmount: 'Banked Amount',
         handOnCash: 'Hand On Cash',
+    },
+    maintenancePage: {
+        heading: 'Vehicle Maintenance',
+        button: {
+            add: 'Add Maintenance Record',
+            edit: 'Edit Maintenance Record',
+        },
+        label: {
+            upcoming: 'Upcoming',
+            upcomingMaintenance: 'Upcoming Maintenance (Next 7 days)',
+            maintenanceHistory: 'Maintenance History',
+            registerNumber: 'Register Number',
+            serviceType: 'Service Type',
+            description: 'Description',
+            cost: 'Cost',
+            createdDate: 'Created Date',
+            paymentType: 'Payment Type',
+            paymentStatus: 'Payment Status',
+            dueDate: 'Due Date',
+        }
     }
 }

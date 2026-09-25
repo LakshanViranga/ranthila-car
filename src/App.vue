@@ -38,7 +38,7 @@ export default {
     async handleLogin(username, password) {
       try {
         const response = await dbService.login({
-          username, password
+          username: username.toLowerCase(), password
         });
         if (response.success) {
           this.isLoggedIn = true;

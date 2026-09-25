@@ -107,6 +107,7 @@
                     <v-icon icon="fa fa-eye" />
                   </v-btn>
                   <v-btn
+                      v-if="roleName === roleTypes.admin"
                       icon
                       size="small"
                       variant="text"
@@ -160,7 +161,7 @@ import HeaderComponent from '../component/Header.vue'
 import { dbService } from '../services/db.ts'
 import {
   convertSnakeCase,
-  orderStatus,
+  orderStatus, roleTypes,
 } from '../utils/constants.ts'
 import { useAuthStore } from '../stores/auth.ts'
 import { useSnackbar } from '../composables/useSnackbar.js'
@@ -171,6 +172,7 @@ const authStore = useAuthStore()
 
 // ============== AUTHENTICATION ==============
 const loggedUser = ref(authStore.username)
+const roleName = ref(authStore.role)
 
 // ============== FILTER & RESERVATIONS ==============
 const filterStatus = ref('')

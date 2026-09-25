@@ -346,7 +346,7 @@
                 <div class="customer-detail">
                   <p class="detail-label">{{ t('field.label.previousOrder') }} :</p>
                   <p class="detail-value">
-                    {{ customer[0]?.previous_orders_count ?? customer[0]?.order_count ?? customer[0]?.total_orders ?? 0 }}
+                    {{ customerOrderCount }}
                   </p>
                 </div>
                 <div class="customer-detail">
@@ -366,7 +366,7 @@
                       @click="openEditCustomerModal"
                   >
                     <v-icon icon="fa fa-eye" start />
-                    {{ t('field.button.view')}}
+                    {{ t('field.button.customerView')}}
                   </v-btn>
                 </div>
               </div>
@@ -755,6 +755,7 @@ const isSearching = ref(false)
 const isCustomerVerified = ref(false)
 const isBlacklisted = ref(false)
 const customer = ref([])
+const customerOrderCount = ref(0)
 
 // ============== REGISTRATION MODAL ==============
 const showRegistrationModal = ref(false)
@@ -893,11 +894,14 @@ const searchCustomer = async () => {
   isSearching.value = true
   try {
     const result = await dbService.getCustomerByIdentity(customerIdInput.value)
+
     if (result.length > 0) {
       customer.value = result
       customerName.value = result[0].customer_name
       isBlacklisted.value = result[0].is_blacked_listed || false
 
+      const orderCount = await dbService.getOrdersCountByCustomerId(customerIdInput.value)
+      customerOrderCount.value = orderCount.count
       if (!isBlacklisted.value) {
         isCustomerVerified.value = true
       }
@@ -1155,21 +1159,17 @@ const updateCustomer = async () => {
   isRegistering.value = true
   try {
     const updateData = {
-      id: newCustomerForm.customerId,
+      customer_id: newCustomerForm.identityNumber,
       customer_name: newCustomerForm.name,
       license_number: newCustomerForm.licenseNumber,
       contact_no: newCustomerForm.contactNumber,
       address: newCustomerForm.address,
       updated_by: loggedUser.value,
     }
+    updateData.license_front_image = licenseFrontImage.value
 
-    // Only include images if they were changed
-    if (licenseFrontImage.value && typeof licenseFrontImage.value !== 'object') {
-      updateData.license_front_image = licenseFrontImage.value
-    }
-    if (licenseBackImage.value && typeof licenseBackImage.value !== 'object') {
-      updateData.license_back_image = licenseBackImage.value
-    }
+    updateData.license_back_image = licenseBackImage.value
+
 
     await dbService.updateCustomer(updateData)
 

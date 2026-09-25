@@ -123,11 +123,17 @@ pub struct CustomerOrder {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct GetOrdersRequest {
+pub struct GetOrderFilterRequest {
     pub vehicle_id: Option<i64>,
-    pub customer_id: Option<i64>,
-    pub date: Option<String>,           // YYYY-MM-DD format
+    pub customer_id: Option<String>,
+    pub created_date: Option<String>,           // YYYY-MM-DD format
     pub start_date: Option<String>,     // YYYY-MM-DD format
     pub limit: Option<i64>,             // Optional pagination limit
     pub offset: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct GetOrderCount {
+    pub customer_id: String,
+    pub count: i64
 }

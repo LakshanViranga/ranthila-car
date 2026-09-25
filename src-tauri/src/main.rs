@@ -9,9 +9,9 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use std::path::PathBuf;
 
-use crate::handlers::order::{create_order, get_orders, get_order_sequence, delete_order, update_order, get_customer_order, get_order_by_order_number, filter_order};
+use crate::handlers::order::{create_order, get_orders, get_order_sequence, delete_order, update_order, get_customer_order, get_order_by_order_number, filter_order, get_order_count_by_customer_id};
 use crate::handlers::vehicle::{create_vehicle, get_vehicles, delete_vehicle, update_vehicle, update_vehicle_mileage};
-use crate::handlers::customer::{create_customer, get_customer_by_identity_number, add_restricted_customer, remove_restricted_customer};
+use crate::handlers::customer::{create_customer, get_customer_by_identity_number, add_restricted_customer, remove_restricted_customer, update_customer};
 use crate::handlers::incident::{get_incidents, add_incident};
 use crate::handlers::transaction::{add_transaction, get_transaction};
 use crate::handlers::maintenance::{add_maintenance_record, get_maintenance_record, delete_maintenance, update_maintenance, complete_maintenance};
@@ -93,7 +93,9 @@ fn main() {
             login,
             get_all_bank_records,
             add_bank_record,
-            update_vehicle_mileage
+            update_vehicle_mileage,
+            get_order_count_by_customer_id,
+            update_customer
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
