@@ -70,7 +70,7 @@
           <h2 class="section-title">Quick access</h2>
           <div class="links-grid">
             <router-link to="/view-order" class="quick-link">
-              <span class="action-badge">Action Required</span>
+              <span  v-if="pendingOrders > 0" class="action-badge">Action Required</span>
               <i class="fa fa-check"></i>
               <span>{{ t('dashboard.quickLinks.viewOrder')}}</span>
             </router-link>
@@ -159,10 +159,10 @@ const authStore = useAuthStore();
 // ============ Reactive State ============
 const loggedUser = ref(authStore.username);
 const roleName = ref(authStore.role);
-const todayOrders = ref(24);
-const todayRevenue = ref(1280.50);
-const totalProducts = ref(156);
-const pendingOrders = ref(5);
+const todayOrders = ref(0);
+const todayRevenue = ref(0);
+const totalProducts = ref(0);
+const pendingOrders = ref(0);
 const pendingMaintenance = ref(0);
 const pendingExpenses = ref(0);
 
