@@ -31,7 +31,10 @@ pub fn add_incident(state: tauri::State<AppState>, request: AddIncident) -> Resu
 }
 
 #[tauri::command]
-pub fn get_incidents(state: tauri::State<AppState>, national_id: String) -> Result<Vec<Incident>, String> {
+pub fn get_incidents(
+    state: tauri::State<AppState>,
+    national_id: String,
+) -> Result<Vec<Incident>, String> {
     let db = state.db.lock().unwrap();
 
     let mut stmt = db
@@ -54,7 +57,7 @@ pub fn get_incidents(state: tauri::State<AppState>, national_id: String) -> Resu
                 incident_date: row.get(7)?,
                 status: row.get(8)?,
                 created_by: row.get(9)?,
-                created_at: row.get(10)?
+                created_at: row.get(10)?,
             })
         })
         .map_err(|e| e.to_string())?

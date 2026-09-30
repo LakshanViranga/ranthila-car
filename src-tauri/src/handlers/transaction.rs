@@ -3,7 +3,10 @@ use crate::AppState;
 use rusqlite::params;
 
 #[tauri::command]
-pub fn add_transaction(state: tauri::State<AppState>, request: AddTransaction) -> Result<String, String> {
+pub fn add_transaction(
+    state: tauri::State<AppState>,
+    request: AddTransaction,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Insert order
@@ -45,7 +48,7 @@ pub fn get_transaction(state: tauri::State<AppState>) -> Result<Vec<Transaction>
                 amount: row.get(3)?,
                 payment_type: row.get(4)?,
                 created_by: row.get(5)?,
-                created_at: row.get(6)?
+                created_at: row.get(6)?,
             })
         })
         .map_err(|e| e.to_string())?

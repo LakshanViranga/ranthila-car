@@ -1,9 +1,14 @@
-use crate::models::vehicle::{CreateVehicleRequest, Vehicle, EditVehicleRequest, UpdateVehicleMileage};
+use crate::models::vehicle::{
+    CreateVehicleRequest, EditVehicleRequest, UpdateVehicleMileage, Vehicle,
+};
 use crate::AppState;
 use rusqlite::params;
 
 #[tauri::command]
-pub fn create_vehicle(state: tauri::State<AppState>, request: CreateVehicleRequest) -> Result<String, String> {
+pub fn create_vehicle(
+    state: tauri::State<AppState>,
+    request: CreateVehicleRequest,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Insert order
@@ -79,7 +84,10 @@ pub fn get_vehicles(state: tauri::State<AppState>) -> Result<Vec<Vehicle>, Strin
 
 // Edit vehicle
 #[tauri::command]
-pub fn update_vehicle(state: tauri::State<AppState>, request: EditVehicleRequest) -> Result<String, String> {
+pub fn update_vehicle(
+    state: tauri::State<AppState>,
+    request: EditVehicleRequest,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Edit Vehicle
@@ -116,9 +124,7 @@ pub fn delete_vehicle(state: tauri::State<AppState>, vehicle_id: String) -> Resu
     tx.execute(
         "UPDATE vehicles SET is_deleted = CURRENT_TIMESTAMP
          WHERE vehicle_id = ?1",
-        params![
-            vehicle_id,
-        ],
+        params![vehicle_id,],
     )
     .map_err(|e| e.to_string())?;
 
@@ -129,21 +135,21 @@ pub fn delete_vehicle(state: tauri::State<AppState>, vehicle_id: String) -> Resu
 
 // Update Vehicle Mileage
 #[tauri::command]
-pub fn update_vehicle_mileage(state: tauri::State<AppState>, request: UpdateVehicleMileage) -> Result<String, String> {
+pub fn update_vehicle_mileage(
+    state: tauri::State<AppState>,
+    request: UpdateVehicleMileage,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Update Vehicle Mileage
     tx.execute(
         "UPDATE vehicles SET mileage = ?1 WHERE vehicle_id = ?2",
-        params![
-            request.mileage,
-            request.vehicle_id,
-        ],
+        params![request.mileage, request.vehicle_id,],
     )
     .map_err(|e| {
         eprintln!("Database error: {:?}", e);
         e.to_string()
-        })?;
+    })?;
 
     tx.commit().map_err(|e| e.to_string())?;
 

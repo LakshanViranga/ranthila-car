@@ -14,7 +14,7 @@ pub struct AddMaintenanceRequest {
     pub next_service_mileage: Option<i64>,
     pub payment_status: String,
     pub payment_type: String,
-    pub created_by: String
+    pub created_by: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

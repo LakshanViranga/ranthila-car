@@ -1,12 +1,15 @@
-use crate::models::user::{User, SaveUserRequest, LoginRequest, LoginResponse, UserDb};
+use crate::models::user::{LoginRequest, LoginResponse, SaveUserRequest, User, UserDb};
+use crate::utils::common::{hash_password, verify_password};
 use crate::AppState;
-use crate::utils::common::{verify_password, hash_password};
 use rusqlite::params;
 
 #[tauri::command]
 pub fn get_users(state: tauri::State<AppState>) -> Result<Vec<User>, String> {
     let db = state.db.lock().unwrap();
-    let mut stmt = db.prepare("SELECT id, username, role, status, created_at FROM users ORDER BY created_at DESC")
+    let mut stmt = db
+        .prepare(
+            "SELECT id, username, role, status, created_at FROM users ORDER BY created_at DESC",
+        )
         .map_err(|e| format!("Query error: {}", e))?;
 
     let users = stmt
@@ -16,7 +19,7 @@ pub fn get_users(state: tauri::State<AppState>) -> Result<Vec<User>, String> {
                 username: row.get(1)?,
                 role: row.get(2)?,
                 status: row.get(3)?,
-                created_at: row.get(4)?
+                created_at: row.get(4)?,
             })
         })
         .map_err(|e| format!("Query error: {}", e))?
@@ -26,20 +29,25 @@ pub fn get_users(state: tauri::State<AppState>) -> Result<Vec<User>, String> {
 }
 
 #[tauri::command]
-pub fn save_user(state: tauri::State<AppState>, request: SaveUserRequest) -> Result<String, String> {
+pub fn save_user(
+    state: tauri::State<AppState>,
+    request: SaveUserRequest,
+) -> Result<String, String> {
     let hashed_password = hash_password(&request.password)?;
 
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Insert user
-    tx.execute("INSERT INTO users (username, password, role, status)
+    tx.execute(
+        "INSERT INTO users (username, password, role, status)
          VALUES (?1, ?2, ?3, ?4)",
         params![
-           request.username,
-           hashed_password,
-           request.role,
-           request.status,
-        ],)
+            request.username,
+            hashed_password,
+            request.role,
+            request.status,
+        ],
+    )
     .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
@@ -48,8 +56,10 @@ pub fn save_user(state: tauri::State<AppState>, request: SaveUserRequest) -> Res
 }
 
 #[tauri::command]
-pub fn login(state: tauri::State<AppState> ,request: LoginRequest) -> Result<LoginResponse, String> {
-
+pub fn login(
+    state: tauri::State<AppState>,
+    request: LoginRequest,
+) -> Result<LoginResponse, String> {
     if request.username.is_empty() || request.password.is_empty() {
         return Ok(LoginResponse {
             success: false,

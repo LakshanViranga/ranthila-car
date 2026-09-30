@@ -37,7 +37,7 @@ pub struct Vehicle {
     pub revenue_licence_date: String,
     pub insurance_date: String,
     pub created_by: String,
-    pub created_at: String
+    pub created_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

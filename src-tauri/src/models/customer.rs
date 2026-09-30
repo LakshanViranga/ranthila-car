@@ -48,4 +48,3 @@ pub struct UpdateCustomerRequest {
     pub address: String,
     pub contact_no: String,
 }
-

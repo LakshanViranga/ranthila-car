@@ -11,7 +11,7 @@ pub struct AddAccountSummery {
     pub expenses_bank: i64,
     pub bank_deposit: i64,
     pub hand_on_cash: i64,
-    pub created_by: String
+    pub created_by: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

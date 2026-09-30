@@ -8,7 +8,7 @@ pub struct AddExpensesRecord {
     pub date: String,
     pub payment_type: String,
     pub payment_status: String,
-    pub created_by: String
+    pub created_by: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -21,7 +21,7 @@ pub struct ExpensesRecord {
     pub payment_type: String,
     pub payment_status: String,
     pub created_by: String,
-    pub created_at: String
+    pub created_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

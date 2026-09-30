@@ -1,14 +1,19 @@
-use crate::models::expense::{AddExpensesRecord, ExpensesRecord, UpdateExpensesRecord, UpdatePaymentStatus};
+use crate::models::expense::{
+    AddExpensesRecord, ExpensesRecord, UpdateExpensesRecord, UpdatePaymentStatus,
+};
 use crate::AppState;
 use rusqlite::params;
 
 // Add expenses
 #[tauri::command]
-pub fn add_expenses(state: tauri::State<AppState>, request: AddExpensesRecord) -> Result<String, String> {
+pub fn add_expenses(
+    state: tauri::State<AppState>,
+    request: AddExpensesRecord,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
-        let tx = db.transaction().map_err(|e| e.to_string())?;
-        // Insert order
-        tx.execute(
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    // Insert order
+    tx.execute(
             "INSERT INTO expenses (category, description, date, amount, payment_type, payment_status, created_by)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
@@ -23,9 +28,9 @@ pub fn add_expenses(state: tauri::State<AppState>, request: AddExpensesRecord) -
         )
         .map_err(|e| e.to_string())?;
 
-        tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
 
-        Ok("Expenses record is added".to_string())
+    Ok("Expenses record is added".to_string())
 }
 
 // Get expenses record
@@ -68,8 +73,11 @@ pub fn delete_expenses(state: tauri::State<AppState>, id: i64) -> Result<String,
     let tx = db.transaction().map_err(|e| e.to_string())?;
 
     // Delete expenses record
-    tx.execute("UPDATE expenses SET is_deleted = CURRENT_TIMESTAMP WHERE id = ?1", params![id],)
-        .map_err(|e| {e.to_string()})?;
+    tx.execute(
+        "UPDATE expenses SET is_deleted = CURRENT_TIMESTAMP WHERE id = ?1",
+        params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
 
@@ -78,7 +86,10 @@ pub fn delete_expenses(state: tauri::State<AppState>, id: i64) -> Result<String,
 
 // Update expenses record
 #[tauri::command]
-pub fn update_expenses(state: tauri::State<AppState>, request: UpdateExpensesRecord) -> Result<String, String> {
+pub fn update_expenses(
+    state: tauri::State<AppState>,
+    request: UpdateExpensesRecord,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
 
     let tx = db.transaction().map_err(|e| e.to_string())?;
@@ -104,23 +115,23 @@ pub fn update_expenses(state: tauri::State<AppState>, request: UpdateExpensesRec
 
 // Complete expenses record
 #[tauri::command]
-pub fn complete_expenses(state: tauri::State<AppState>, request: UpdatePaymentStatus) -> Result<String, String> {
+pub fn complete_expenses(
+    state: tauri::State<AppState>,
+    request: UpdatePaymentStatus,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
-        let tx = db.transaction().map_err(|e| e.to_string())?;
-        // Edit Vehicle
-        tx.execute(
-            "UPDATE expenses SET payment_status = ?1 WHERE id = ?2",
-            params![
-                request.payment_status,
-                request.id,
-            ],
-        )
-        .map_err(|e| {
-            eprintln!("Database error: {:?}", e);
-            e.to_string()
-            })?;
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    // Edit Vehicle
+    tx.execute(
+        "UPDATE expenses SET payment_status = ?1 WHERE id = ?2",
+        params![request.payment_status, request.id,],
+    )
+    .map_err(|e| {
+        eprintln!("Database error: {:?}", e);
+        e.to_string()
+    })?;
 
-        tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
 
-        Ok("order status updated".to_string())
+    Ok("order status updated".to_string())
 }

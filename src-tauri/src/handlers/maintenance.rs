@@ -1,10 +1,15 @@
-use crate::models::maintenance::{AddMaintenanceRequest, MaintenanceRecord, UpdateMaintenanceRequest, UpdatePaymentStatus};
+use crate::models::maintenance::{
+    AddMaintenanceRequest, MaintenanceRecord, UpdateMaintenanceRequest, UpdatePaymentStatus,
+};
 use crate::AppState;
 use rusqlite::params;
 
 // Add maintenance record
 #[tauri::command]
-pub fn add_maintenance_record(state: tauri::State<AppState>, request: AddMaintenanceRequest) -> Result<String, String> {
+pub fn add_maintenance_record(
+    state: tauri::State<AppState>,
+    request: AddMaintenanceRequest,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Insert order
@@ -35,7 +40,9 @@ pub fn add_maintenance_record(state: tauri::State<AppState>, request: AddMainten
 }
 
 #[tauri::command]
-pub fn get_maintenance_record(state: tauri::State<AppState>) -> Result<Vec<MaintenanceRecord>, String> {
+pub fn get_maintenance_record(
+    state: tauri::State<AppState>,
+) -> Result<Vec<MaintenanceRecord>, String> {
     let db = state.db.lock().unwrap();
 
     let mut stmt = db
@@ -80,8 +87,11 @@ pub fn delete_maintenance(state: tauri::State<AppState>, id: i64) -> Result<Stri
     let tx = db.transaction().map_err(|e| e.to_string())?;
 
     // Delete maintenance record
-    tx.execute("UPDATE maintenance SET is_deleted = CURRENT_TIMESTAMP WHERE id = ?1", params![id],)
-        .map_err(|e| {e.to_string()})?;
+    tx.execute(
+        "UPDATE maintenance SET is_deleted = CURRENT_TIMESTAMP WHERE id = ?1",
+        params![id],
+    )
+    .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
 
@@ -90,7 +100,10 @@ pub fn delete_maintenance(state: tauri::State<AppState>, id: i64) -> Result<Stri
 
 // Update maintenance record
 #[tauri::command]
-pub fn update_maintenance(state: tauri::State<AppState>, request: UpdateMaintenanceRequest) -> Result<String, String> {
+pub fn update_maintenance(
+    state: tauri::State<AppState>,
+    request: UpdateMaintenanceRequest,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
 
     let tx = db.transaction().map_err(|e| e.to_string())?;
@@ -118,20 +131,24 @@ pub fn update_maintenance(state: tauri::State<AppState>, request: UpdateMaintena
 
 // Complete maintenance record
 #[tauri::command]
-pub fn complete_maintenance(state: tauri::State<AppState>, request: UpdatePaymentStatus) -> Result<String, String> {
+pub fn complete_maintenance(
+    state: tauri::State<AppState>,
+    request: UpdatePaymentStatus,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
 
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Edit Vehicle
     tx.execute(
-       "UPDATE maintenance SET payment_status = ?1 WHERE id = ?2",
-        params![request.payment_status,request.id,],)
-        .map_err(|e| {
-            eprintln!("Database error: {:?}", e);
-            e.to_string()
-            })?;
+        "UPDATE maintenance SET payment_status = ?1 WHERE id = ?2",
+        params![request.payment_status, request.id,],
+    )
+    .map_err(|e| {
+        eprintln!("Database error: {:?}", e);
+        e.to_string()
+    })?;
 
-        tx.commit().map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
 
-     Ok("order status updated".to_string())
+    Ok("order status updated".to_string())
 }

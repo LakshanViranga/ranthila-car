@@ -1,4 +1,5 @@
 pub mod account;
+pub mod bank;
 pub mod customer;
 pub mod expense;
 pub mod incident;
@@ -7,4 +8,3 @@ pub mod order;
 pub mod transaction;
 pub mod user;
 pub mod vehicle;
-pub mod bank;

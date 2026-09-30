@@ -1,13 +1,13 @@
-use rusqlite::{Connection, Result, params};
+use crate::utils::common::hash_password;
+use rusqlite::{params, Connection, Result};
 use std::path::PathBuf;
-use crate::utils::common::{hash_password};
-
 
 pub fn init_db(db_path: &PathBuf) -> Result<Connection, String> {
     let conn = Connection::open(db_path).map_err(|e| format!("Failed to open database: {}", e))?;
 
     // Enable foreign keys
-    conn.execute("PRAGMA foreign_keys = ON", []).map_err(|e| format!("Failed to enable foreign keys: {}", e))?;
+    conn.execute("PRAGMA foreign_keys = ON", [])
+        .map_err(|e| format!("Failed to enable foreign keys: {}", e))?;
 
     // Create tables
     conn.execute_batch(
@@ -196,8 +196,9 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, String> {
             seq_date DATE PRIMARY KEY,
             counter INTEGER NOT NULL
         );
-        "
-    ).map_err(|e| format!("Failed to create tables: {}", e))?;
+        ",
+    )
+    .map_err(|e| format!("Failed to create tables: {}", e))?;
 
     let password_hash = hash_password("admin")?;
 
@@ -214,22 +215,18 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, String> {
             "#,
             [],
             |row| row.get(0),
-            )
+        )
         .map_err(|e| format!("Failed to check users table: {}", e))?;
 
     if !admin_users_exists {
         conn.execute(
-                r#"
+            r#"
                 INSERT INTO users (username, password, role, status)
                 VALUES (?1, ?2, ?3, ?4)
                 "#,
-                params![
-                    "admin",
-                    password_hash,
-                    "ADMIN",
-                    "ACTIVE"
-                ],
-        ).map_err(|e| format!("Failed to create default user: {}", e))?;
+            params!["admin", password_hash, "ADMIN", "ACTIVE"],
+        )
+        .map_err(|e| format!("Failed to create default user: {}", e))?;
     }
 
     Ok(conn)

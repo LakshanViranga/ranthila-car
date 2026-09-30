@@ -1,11 +1,13 @@
-use crate::models::account::{AddAccountSummery, AccountSummery};
+use crate::models::account::{AccountSummery, AddAccountSummery};
 use crate::AppState;
 use rusqlite::params;
 
-
 // Add account summery table
 #[tauri::command]
-pub fn add_account_summery(state: tauri::State<AppState>, request: AddAccountSummery) -> Result<String, String> {
+pub fn add_account_summery(
+    state: tauri::State<AppState>,
+    request: AddAccountSummery,
+) -> Result<String, String> {
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
     // Insert order
@@ -66,7 +68,7 @@ pub fn get_account_summery(state: tauri::State<AppState>) -> Result<Vec<AccountS
                 bank_deposit: row.get(7)?,
                 hand_on_cash: row.get(8)?,
                 created_by: row.get(9)?,
-                created_at: row.get(10)?
+                created_at: row.get(10)?,
             })
         })
         .map_err(|e| e.to_string())?

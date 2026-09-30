@@ -1,18 +1,19 @@
-use crate::models::order::{CreateOrderRequest, Order, UpdateOrderRequest, CustomerOrder,
-    GetOrderByOrderId, FilterOrderResponse, GetOrderFilterRequest, GetOrderCount};
+use crate::models::order::{
+    CreateOrderRequest, CustomerOrder, FilterOrderResponse, GetOrderByOrderId, GetOrderCount,
+    GetOrderFilterRequest, Order, UpdateOrderRequest,
+};
+use crate::utils::common::{get_image, save_image};
 use crate::AppState;
-use crate::utils::common::{save_image, get_image};
-use rusqlite::params;
 use chrono::Local;
+use rusqlite::params;
 
 #[tauri::command]
-pub fn create_order(state: tauri::State<AppState>, request: CreateOrderRequest,) -> Result<String, String> {
-
+pub fn create_order(
+    state: tauri::State<AppState>,
+    request: CreateOrderRequest,
+) -> Result<String, String> {
     // Inserting image
-    let image_dir = state
-        .app_dir
-        .join("image")
-        .join("order");
+    let image_dir = state.app_dir.join("image").join("order");
     let order_image_path = if request.customer_image.is_empty() {
         "not_set".to_string()
     } else {
@@ -57,12 +58,9 @@ pub fn create_order(state: tauri::State<AppState>, request: CreateOrderRequest,)
 
 #[tauri::command]
 pub fn get_orders(state: tauri::State<AppState>) -> Result<Vec<Order>, String> {
-let db = state.db.lock().unwrap();
+    let db = state.db.lock().unwrap();
 
-    let image_dir = state
-                .app_dir
-                .join("image")
-                .join("order");
+    let image_dir = state.app_dir.join("image").join("order");
 
     let mut stmt = db
         .prepare(
@@ -80,37 +78,40 @@ let db = state.db.lock().unwrap();
     let orders = stmt
         .query_map([], |row| {
             Ok(Order {
-                    id: row.get(0)?,
-                    order_number: row.get(1)?,
-                    customer_id: row.get(2)?,
-                    vehicle_id: row.get(3)?,
-                    starting_mileage: row.get(4)?,
-                    end_mileage: row.get(5)?,
-                    release_time: row.get(6)?,
-                    handover_time: row.get(7)?,
-                    guarantee_property: row.get(8)?,
-                    guarantee_type: row.get(9)?,
-                    customer_image: if row.get::<_, String>(10)? == "not_set" { None } else { get_image(row.get(10)?, &image_dir).ok() },
-                    total_distance: row.get(11)?,
-                    total_amount: row.get(12)?,
-                    advanced_payment: row.get(13)?,
-                    payment_type: row.get(14)?,
-                    payment_status: row.get(15)?,
-                    order_status: row.get(16)?,
-                    notes: row.get(17)?,
-                    created_by: row.get(18)?,
-                    created_at: row.get(19)?,
-                    updated_by: row.get(20)?,
-                    updated_at: row.get(21)?,
-                    customer_name: row.get(22)?,
-                    paid_amount: row.get(23)?,
-                    contact_no: row.get(24)?,
-                    bank_account_name: row.get(25)?,
-                    bank_transfer_amount: row.get(26)?,
-                    cash_amount: row.get(27)?,
-                    discount: row.get(28)?,
-                }
-             )
+                id: row.get(0)?,
+                order_number: row.get(1)?,
+                customer_id: row.get(2)?,
+                vehicle_id: row.get(3)?,
+                starting_mileage: row.get(4)?,
+                end_mileage: row.get(5)?,
+                release_time: row.get(6)?,
+                handover_time: row.get(7)?,
+                guarantee_property: row.get(8)?,
+                guarantee_type: row.get(9)?,
+                customer_image: if row.get::<_, String>(10)? == "not_set" {
+                    None
+                } else {
+                    get_image(row.get(10)?, &image_dir).ok()
+                },
+                total_distance: row.get(11)?,
+                total_amount: row.get(12)?,
+                advanced_payment: row.get(13)?,
+                payment_type: row.get(14)?,
+                payment_status: row.get(15)?,
+                order_status: row.get(16)?,
+                notes: row.get(17)?,
+                created_by: row.get(18)?,
+                created_at: row.get(19)?,
+                updated_by: row.get(20)?,
+                updated_at: row.get(21)?,
+                customer_name: row.get(22)?,
+                paid_amount: row.get(23)?,
+                contact_no: row.get(24)?,
+                bank_account_name: row.get(25)?,
+                bank_transfer_amount: row.get(26)?,
+                cash_amount: row.get(27)?,
+                discount: row.get(28)?,
+            })
         })
         .map_err(|e| {
             eprintln!("Database error: {:?}", e);
@@ -118,8 +119,8 @@ let db = state.db.lock().unwrap();
         })?
         .collect::<Result<Vec<Order>, _>>()
         .map_err(|e| {
-           eprintln!("Database error: {:?}", e);
-           e.to_string()
+            eprintln!("Database error: {:?}", e);
+            e.to_string()
         })?;
 
     Ok(orders)
@@ -127,45 +128,43 @@ let db = state.db.lock().unwrap();
 
 #[tauri::command]
 pub fn get_order_sequence(state: tauri::State<AppState>) -> Result<String, String> {
-     let mut db = state.db.lock().unwrap();
-     let tx = db.transaction().map_err(|e| e.to_string())?;
-     tx.execute(
+    let mut db = state.db.lock().unwrap();
+    let tx = db.transaction().map_err(|e| e.to_string())?;
+    tx.execute(
              "INSERT INTO order_sequence (seq_date, counter) VALUES (date('now'), 1) ON CONFLICT(seq_date)
              DO UPDATE SET counter = counter + 1",
              [],
          )
          .map_err(|e| e.to_string())?;
 
-     // read counter
-    let counter = tx.query_row(
-                 "SELECT counter FROM order_sequence WHERE seq_date = date('now')",
-                 [],
-                 |row| row.get::<_, i64>(0),
-             )
-             .map_err(|e| e.to_string())?;
+    // read counter
+    let counter = tx
+        .query_row(
+            "SELECT counter FROM order_sequence WHERE seq_date = date('now')",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
 
-    let date = Local::now().format("%Y%m%d")
-             .to_string();
-     Ok(format!("{}-{:05}", date, counter))
+    let date = Local::now().format("%Y%m%d").to_string();
+    Ok(format!("{}-{:05}", date, counter))
 }
 
 #[tauri::command]
-pub fn update_order(state: tauri::State<AppState>, request: UpdateOrderRequest) -> Result<String, String> {
-
+pub fn update_order(
+    state: tauri::State<AppState>,
+    request: UpdateOrderRequest,
+) -> Result<String, String> {
     // Inserting image
-    let image_dir = state
-        .app_dir
-        .join("image")
-        .join("order");
+    let image_dir = state.app_dir.join("image").join("order");
 
     let order_image_path = if request.customer_image.is_empty() {
         "not_set".to_string()
     } else {
         save_image(request.customer_image, &image_dir)?
     };
-
 
     let mut db = state.db.lock().unwrap();
     let tx = db.transaction().map_err(|e| e.to_string())?;
@@ -219,9 +218,7 @@ pub fn delete_order(state: tauri::State<AppState>, id: i64) -> Result<String, St
     tx.execute(
         "UPDATE orders SET is_deleted = CURRENT_TIMESTAMP
          WHERE id = ?1",
-        params![
-            id,
-        ],
+        params![id,],
     )
     .map_err(|e| e.to_string())?;
 
@@ -231,7 +228,10 @@ pub fn delete_order(state: tauri::State<AppState>, id: i64) -> Result<String, St
 }
 
 #[tauri::command]
-pub fn get_customer_order(state: tauri::State<AppState>, national_id: String) -> Result<Vec<CustomerOrder>, String> {
+pub fn get_customer_order(
+    state: tauri::State<AppState>,
+    national_id: String,
+) -> Result<Vec<CustomerOrder>, String> {
     let db = state.db.lock().unwrap();
 
     let mut stmt = db
@@ -242,29 +242,27 @@ pub fn get_customer_order(state: tauri::State<AppState>, national_id: String) ->
         .map_err(|e| e.to_string())?;
 
     let customer_order = stmt
-            .query_map([national_id], |row| {
-                Ok(CustomerOrder {
-                        id: row.get(0)?,
-                        order_number: row.get(1)?,
-                        order_status: row.get(2)?,
-                        created_at: row.get(3)?,
-                    }
-                 )
+        .query_map([national_id], |row| {
+            Ok(CustomerOrder {
+                id: row.get(0)?,
+                order_number: row.get(1)?,
+                order_status: row.get(2)?,
+                created_at: row.get(3)?,
             })
-            .map_err(|e| e.to_string())?
-            .collect::<Result<Vec<CustomerOrder>, _>>()
-            .map_err(|e| e.to_string())?;
+        })
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<CustomerOrder>, _>>()
+        .map_err(|e| e.to_string())?;
 
     Ok(customer_order)
 }
 
 #[tauri::command]
-pub fn get_order_by_order_number(state: tauri::State<AppState>, order_id: String) -> Result<Vec<GetOrderByOrderId>, String> {
-
-    let image_dir = state
-            .app_dir
-            .join("image")
-            .join("order");
+pub fn get_order_by_order_number(
+    state: tauri::State<AppState>,
+    order_id: String,
+) -> Result<Vec<GetOrderByOrderId>, String> {
+    let image_dir = state.app_dir.join("image").join("order");
 
     let db = state.db.lock().unwrap();
     let mut stmt = db
@@ -306,28 +304,28 @@ pub fn get_order_by_order_number(state: tauri::State<AppState>, order_id: String
 }
 
 #[tauri::command]
-pub fn filter_order(state: tauri::State<AppState> ,request: GetOrderFilterRequest) -> Result<Vec<FilterOrderResponse>, String> {
-
-    let image_dir = state.app_dir
-                .join("image")
-                .join("order");
+pub fn filter_order(
+    state: tauri::State<AppState>,
+    request: GetOrderFilterRequest,
+) -> Result<Vec<FilterOrderResponse>, String> {
+    let image_dir = state.app_dir.join("image").join("order");
 
     let db = state.db.lock().unwrap();
 
-     // Count how many filters are provided (should be at most 1)
-     let filter_count = [
-            request.vehicle_id.is_some(),
-            request.customer_id.is_some(),
-            request.created_date.is_some(),
-            request.start_date.is_some(),
-        ]
-        .iter()
-        .filter(|&&x| x)
-        .count();
+    // Count how many filters are provided (should be at most 1)
+    let filter_count = [
+        request.vehicle_id.is_some(),
+        request.customer_id.is_some(),
+        request.created_date.is_some(),
+        request.start_date.is_some(),
+    ]
+    .iter()
+    .filter(|&&x| x)
+    .count();
 
-     if filter_count > 1 {
+    if filter_count > 1 {
         return Err("Only one search parameter is allowed at a time".to_string());
-     }
+    }
 
     let mut query = "SELECT o.order_number, o.customer_id, o.release_time, o.handover_time, o.customer_image, o.order_status,
                      v.register_number FROM orders o JOIN vehicles v ON o.vehicle_id = v.vehicle_id WHERE o.is_deleted IS NULL".to_string();
@@ -338,14 +336,11 @@ pub fn filter_order(state: tauri::State<AppState> ,request: GetOrderFilterReques
     } else if let Some(customer_id) = request.customer_id {
         query.push_str(&format!(" AND o.customer_id = '{}'", customer_id));
     } else if let Some(created_date) = request.created_date {
-       // Date range: from start of day to start of next day
-       query.push_str(&format!(" AND DATE(o.created_at) = '{}'", created_date));
+        // Date range: from start of day to start of next day
+        query.push_str(&format!(" AND DATE(o.created_at) = '{}'", created_date));
     } else if let Some(start_date) = request.start_date {
         // From start_date onwards
-        query.push_str(&format!(
-            " AND DATE(o.created_at) >= '{}'",
-            start_date
-        ));
+        query.push_str(&format!(" AND DATE(o.created_at) >= '{}'", start_date));
     }
 
     // Add sorting
@@ -353,12 +348,13 @@ pub fn filter_order(state: tauri::State<AppState> ,request: GetOrderFilterReques
 
     // Add pagination
     let offset = request.offset.unwrap_or(0);
-        if let Some(limit) = request.limit {
-            query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+    if let Some(limit) = request.limit {
+        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
     }
 
-    let mut stmt = db.prepare(&query)
-            .map_err(|e| format!("Query error: {}", e))?;
+    let mut stmt = db
+        .prepare(&query)
+        .map_err(|e| format!("Query error: {}", e))?;
 
     let orders = stmt
         .query_map([], |row| {
@@ -369,7 +365,7 @@ pub fn filter_order(state: tauri::State<AppState> ,request: GetOrderFilterReques
                 handover_time: row.get(3)?,
                 customer_image: get_image(row.get(4)?, &image_dir).ok(),
                 order_status: row.get(5)?,
-                vehicle_register_number: row.get(6)?
+                vehicle_register_number: row.get(6)?,
             })
         })
         .map_err(|e| format!("Query error: {}", e))?
@@ -380,15 +376,19 @@ pub fn filter_order(state: tauri::State<AppState> ,request: GetOrderFilterReques
 
 // Get order count
 #[tauri::command]
-pub fn get_order_count_by_customer_id(state: tauri::State<AppState> , customer_id: String) -> Result<GetOrderCount, String> {
+pub fn get_order_count_by_customer_id(
+    state: tauri::State<AppState>,
+    customer_id: String,
+) -> Result<GetOrderCount, String> {
     let db = state.db.lock().unwrap();
-    let mut stmt = db.prepare("SELECT count(*) FROM orders  WHERE is_deleted IS NULL AND customer_id = ?1")
-            .map_err(|e| format!("Query error: {}", e))?;
+    let mut stmt = db
+        .prepare("SELECT count(*) FROM orders  WHERE is_deleted IS NULL AND customer_id = ?1")
+        .map_err(|e| format!("Query error: {}", e))?;
     let count: i64 = stmt
-            .query_row([customer_id.clone()], |row| row.get(0))
-            .map_err(|e| format!("Query error: {}", e))?;
+        .query_row([customer_id.clone()], |row| row.get(0))
+        .map_err(|e| format!("Query error: {}", e))?;
     Ok(GetOrderCount {
-      customer_id: customer_id.clone(),
-      count,
+        customer_id: customer_id.clone(),
+        count,
     })
 }

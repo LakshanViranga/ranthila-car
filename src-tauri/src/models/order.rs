@@ -100,7 +100,7 @@ pub struct GetOrderByOrderId {
     pub total_amount: i64,
     pub order_status: String,
     pub created_at: String,
-    pub customer_image_with_vehicle: Option<Vec<u8>>
+    pub customer_image_with_vehicle: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -126,14 +126,14 @@ pub struct CustomerOrder {
 pub struct GetOrderFilterRequest {
     pub vehicle_id: Option<i64>,
     pub customer_id: Option<String>,
-    pub created_date: Option<String>,           // YYYY-MM-DD format
-    pub start_date: Option<String>,     // YYYY-MM-DD format
-    pub limit: Option<i64>,             // Optional pagination limit
+    pub created_date: Option<String>, // YYYY-MM-DD format
+    pub start_date: Option<String>,   // YYYY-MM-DD format
+    pub limit: Option<i64>,           // Optional pagination limit
     pub offset: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GetOrderCount {
     pub customer_id: String,
-    pub count: i64
+    pub count: i64,
 }
