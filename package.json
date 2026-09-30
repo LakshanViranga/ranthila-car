@@ -12,8 +12,8 @@
     "tauri-build-win": "npm run build && tauri build --target x86_64-pc-windows-msvc"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.11.0",
-    "@tauri-apps/plugin-log": "^2.10.0",
+    "@tauri-apps/api": "~2.11.0",
+    "@tauri-apps/plugin-log": "~2.10.0",
     "camelcase-keys": "^10.0.2",
     "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
