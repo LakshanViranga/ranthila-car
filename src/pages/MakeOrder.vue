@@ -459,7 +459,6 @@
                     variant="outlined"
                     readonly
                     class="datetime-field"
-                    :rules="[reservationDateValidation]"
                 />
                 <v-btn
                     icon
@@ -765,9 +764,9 @@ const agreeToTerms = ref(false)
 const showStartDateTimePicker = ref(false)
 
 // ============== DATE TIME PICKER STATE ==============
-const startDatePicker = ref(new Date().toISOString().split('T')[0])
+const startDatePicker = ref(new Date())
 const startHour = ref(6)
-const quickHours = ref([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+const quickHours = ref([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
 
 // === WARNING MODAL
 const confirmDialog = ref(null)
@@ -950,7 +949,6 @@ const openEditCustomerModal = async () => {
 
   isEditingCustomer.value = true
   const customerData = customer.value[0]
-  console.log(customerData)
   // Pre-fill form with existing customer data
   newCustomerForm.customerId = customerData.id
   newCustomerForm.name = customerData.customer_name
